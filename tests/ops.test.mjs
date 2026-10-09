@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {randomBytes, randomUUID} from 'node:crypto';
+import {estimateMath,projectMath,activationErrors,sameContact,parseCSV,csvCell,dateSchema} from '../lib/ops-core.ts';
+const require=createRequire(import.meta.url);
+const {Miniflare}=createRequire(require.resolve('wrangler/package.json'))('miniflare');
+const math=estimateMath({items:[{quantity:1,unitCostCents:400000}],overheadPct:10,contingencyPct:5,marginPct:25});
+assert.equal(math.costCents,462000);assert.equal(math.priceCents,616000);assert.equal(math.profitCents,154000);
+assert.throws(()=>estimateMath({items:[],overheadPct:0,contingencyPct:0,marginPct:100}));
+assert.equal(sameContact({phone:'+1 (214) 555-0123'},{phone:'2145550123'}),true);
+assert.equal(sameContact({email:'A@EXAMPLE.COM',phone:'1'},{email:'a@example.com'}),true);
+assert.equal(dateSchema.safeParse('2026-02-30').success,false);
+assert.equal(parseCSV('Name,Notes\n"Example, Inc","Line one\nLine two"')[0].name,'Example, Inc');
+assert.equal(csvCell('=IMPORTXML("x")').startsWith('"\''),true);
+const root=new URL('../dist/server/',import.meta.url).pathname;const files=await readdir(root,{recursive:true});const modules=[{type:'ESModule',path:root+'index.js'},...files.filter(p=>p!=='index.js'&&/\.m?js$/.test(p)).map(p=>({type:'ESModule',path:root+p}))];
+const mf=new Miniflare({modules,compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'ops-test'},bindings:{BD_CREDENTIAL_KEY:randomBytes(32).toString('base64'),BD_AGENT_TOKEN:'only-a-test-token'}});
+let checks=8;
+try{
+ const db=await mf.getD1Database('DB');
+ for(const statement of (await readFile(new URL('../drizzle/0000_perpetual_havok.sql',import.meta.url),'utf8')).split('--> statement-breakpoint').filter(x=>x.trim())) await db.exec(statement.replace(/\n/g,' '));
+ async function state(demo=true){const r=await mf.dispatchFetch('http://example.test/api/ops?demo='+(demo?'1':'0'));assert.equal(r.status,200,await r.clone().text());return r.json();}
+ async function post(action,data={},options={}){const r=await mf.dispatchFetch('http://example.test/api/ops',{method:'POST',headers:{'Content-Type':'application/json',...(options.headers||{})},body:JSON.stringify({requestId:options.requestId||randomUUID(),demo:true,action,data})});const result=await r.json();return {status:r.status,...result};}
+ assert.equal((await state(false)).records.length,0);checks++;
+ const contact={name:'TEST Client',service:'Concrete',source:'Referral',owner:'Tester',nextDue:'2026-10-15',email:'test@example.com',phone:'2145550123',city:'Dallas'};
+ const c=await post('contact',contact);assert.equal(c.ok,true);checks++;
+ assert.equal((await post('contact',{...contact,name:'Duplicate'})).duplicate,true);checks++;
+ assert.equal((await post('contact',{...contact,email:'new@example.com',phone:'',stage:'won'})).status,400);checks++;
+ const q=await post('estimate',{contactId:c.id,title:'Test Patio',scope:'Measured test scope',exclusions:'No extras',items:[{description:'Concrete',quantity:1,unit:'lot',unitCostCents:400000}],overheadPct:10,contingencyPct:5,marginPct:25,depositPct:30,validUntil:'2026-10-30',owner:'Tester'});assert.equal(q.ok,true);checks++;
+ const p=await post('accept-estimate',{id:q.id,acceptedBy:'Test Client',signedRef:'TEST-AGREEMENT'});assert.equal(p.ok,true);checks++;
+ assert.equal((await post('accept-estimate',{id:q.id,acceptedBy:'Test Client',signedRef:'TEST-AGREEMENT'})).duplicate,true);checks++;
+ let project=(await state()).records.find(x=>x.id===p.id);
+ const update=()=>({id:p.id,version:project.version,owner:'Tester',startDate:'2026-10-15',status:'active',checks:{scope:true,quotes:true,permits:true,crew:true}});
+ assert.equal((await post('project-update',update())).status,400);checks++;
+ assert.equal((await post('ledger',{projectId:p.id,type:'payment',description:'Deposit',amountCents:184800,date:'2026-10-09',reference:'TEST-RECEIPT'})).ok,true);checks++;
+ assert.equal((await post('project-update',update())).ok,true);checks++;
+ assert.equal((await post('project-update',update())).status,400);checks++;
+ assert.equal((await post('ledger',{projectId:p.id,type:'payment',description:'Duplicate deposit',amountCents:184800,date:'2026-10-09',reference:' TEST-RECEIPT '})).status,400);checks++;
+ assert.equal((await post('ledger',{projectId:p.id,type:'expense',description:'Materials',amountCents:140000,date:'2026-10-09',paid:false,reference:'TEST-BILL'})).ok,true);checks++;
+ assert.equal((await post('change',{projectId:p.id,title:'Extension',scope:'Written addition',priceCents:100000,costCents:70000,acceptedBy:'Test Client',signedRef:'TEST-CHANGE'})).ok,true);checks++;
+ let data=await state();project=data.records.find(x=>x.id===p.id);const totals=projectMath(project,data.records);assert.equal(totals.contractCents,716000);assert.equal(totals.balanceCents,531200);assert.equal(totals.cashCents,184800);assert.equal(activationErrors(project,data.records).length,0);checks+=4;
+ const req=randomUUID();assert.equal((await post('task',{title:'Inspect',owner:'Tester',due:'2026-10-15',projectId:p.id},{requestId:req})).ok,true);assert.equal((await post('task',{title:'Inspect',owner:'Tester',due:'2026-10-15',projectId:p.id},{requestId:req})).duplicate,true);checks+=2;
+ assert.equal((await post('task',{title:'Inspect',owner:'Tester',due:'2026-10-15'},{headers:{Origin:'https://untrusted.example'}})).status,400);checks++;
+ const stale={...contact,id:c.id,version:1,stage:'visit'};assert.equal((await post('contact-update',stale)).status,400);checks++;
+ const concurrent=await post('contact',{...contact,name:'Concurrent',email:'parallel@example.com',phone:''});
+ const races=await Promise.all(['First','Second'].map(name=>post('contact-update',{...contact,id:concurrent.id,email:'parallel@example.com',phone:'',name,version:1,stage:'qualified'})));
+ assert.equal(races.filter(x=>x.ok).length,1);checks++;
+ const summary=await mf.dispatchFetch('http://example.test/api/agent');assert.equal(summary.status,401);checks++;
+ const auth=await mf.dispatchFetch('http://example.test/api/agent?demo=1',{headers:{Authorization:'Bearer only-a-test-token'}});assert.equal(auth.status,200);checks++;
+ const connect=await mf.dispatchFetch('http://example.test/api/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',provider:'ollama',data:{key:'not-a-real-test-secret',model:'test-model'},demo:false})});assert.equal(connect.status,200,await connect.clone().text());checks++;
+ const raw=await db.prepare('SELECT encrypted FROM credentials').first();assert.ok(raw&&!raw.encrypted.includes('not-a-real-test-secret'));checks++;
+ assert.ok(!JSON.stringify(await state()).includes('not-a-real-test-secret'));checks++;
+ assert.equal((await state(false)).records.length,0);checks++;
+ const home=await mf.dispatchFetch('http://example.test/');assert.equal(home.status,200);checks++;
+ console.log(JSON.stringify({passed:true,checks,realRecords:0,scope:'financial math, CSV, duplicate protection, approval, deposit gating, changes, references, optimistic concurrency, origin checks, agent auth, encrypted credentials, SSR'}));
+}finally{await mf.dispose();}
