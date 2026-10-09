@@ -21,9 +21,9 @@ Money is stored in USD cents. Target margin is calculated on revenue: `price = c
 
 | Component | Implemented | Account setup still required |
 | --- | --- | --- |
-| ChatGPT | Private read-only MCP daily report, project details, connection status and operating guide | Install/connect the provisioned Site plugin and verify an actual call |
+| ChatGPT | Private read-only MCP daily report, project details, connection status and operating guide | Installation confirmed by user; successful MCP requests observed, but tools are not exposed in this session for a data call |
 | GitHub | Source versioning | Repository is public; keep data and secrets outside Git |
-| Vercel | `portal/` access page deployed READY at https://build-dreams-ops.vercel.app | GitHub Login Connection for automatic builds; commercial plan; protected-fetch permission remains denied |
+| Vercel | `portal/` access page deployed READY at https://build-dreams-ops.vercel.app; inactive report preview also READY | GitHub Login Connection for automatic builds; commercial plan; protected-fetch permission and report credentials remain pending |
 | Apollo | Auth test + People API Search; ChatGPT reads saved contacts (zero returned) | Connected Free account denied new prospect API search; direct center key and eligible plan pending |
 | GoHighLevel | Contacts search and upsert | Company Google sign-in returned `User does not exist`; existing GHL account, location ID and scoped token needed |
 | Ollama Cloud | Model validation and bilingual follow-up draft | GitHub sign-in returned a server error; account access, key, cloud model and inference test pending |
@@ -52,7 +52,7 @@ Build then run `node --experimental-strip-types tests/ops.test.mjs` for financia
 
 Deploy **only `portal/`** as a static project with Framework Preset Other. It links to the private operations center. It does not proxy protected records or contain a backend access token. The root application expects Cloudflare D1 and is not a drop-in Vercel deployment. A future migration needs a database and authenticated API design plus explicit authorization for any new credential destination.
 
-`integrations/vercel-report-gateway/` contains a separate, reviewed read-only preview report module. It is not deployed or activated. `/api/service-report` in the private center is disabled until its dedicated `BD_SERVICE_TOKEN` is configured; private platform access is still required. The automatic approval review rejected transferring two access secrets to Vercel. Do not send them by another route; obtain specific authorization naming both secrets and the preview project destination first. The gateway README states the activation and Deployment Protection requirements.
+`integrations/vercel-report-gateway/` contains a separate, reviewed read-only preview report module. The preview deployment is READY at https://build-dreams-167ssccib-albertbtc-1680.vercel.app and remains inactive, without report credentials. `/api/service-report` in the private center is disabled until its dedicated `BD_SERVICE_TOKEN` is configured; private platform access is still required. The automatic approval review rejected transferring two access secrets to Vercel. Do not send them by another route; obtain specific authorization naming both secrets and the preview project destination first. The gateway README states the activation and Deployment Protection requirements.
 
 ## Operators
 

@@ -17,9 +17,9 @@ Acceso de Vercel: https://build-dreams-ops.vercel.app (abre el centro privado; n
 
 ## Consultar desde ChatGPT / Read from ChatGPT
 
-Instala y conecta la conexión privada de Build Dreams creada por este Site. Si no aparece la tarjeta de instalación, abre **Plugins → Personal → Created by you** y busca Build Dreams. Consulta: “Lee el reporte real de Build Dreams; dame las tres prioridades, cobros pendientes y obras bloqueadas. No inventes avances”.
+La instalación de la conexión privada fue confirmada. El servidor recibió solicitudes MCP exitosas; sus cuatro herramientas todavía no están expuestas en esta sesión y falta comprobar una consulta de datos. En **Plugins → Personal → Created by you**, abre Build Dreams y elige **Connect** si aparece. Consulta: “Lee el reporte real de Build Dreams; dame las tres prioridades, cobros pendientes y obras bloqueadas. No inventes avances”. Mientras se habilita la consulta, descarga el reporte desde el centro.
 
-Install/connect the private Site plugin and ask for the real company report. Its tools only read daily priorities, project details, connection states and operating guidance. An actual successful tool call confirms connection; a published server alone does not.
+The user confirmed installation. Successful MCP requests reached the server, but this session does not expose its tools yet. Its tools only read daily priorities, project details, connection states and operating guidance. An actual successful data call confirms report access; publication and discovery alone do not.
 
 ## Cada jornada / Every day
 
@@ -35,6 +35,6 @@ Install/connect the private Site plugin and ask for the real company report. Its
 | GoHighLevel | Google no encontró un usuario de GHL para la cuenta de empresa usada. Usa una cuenta existente; selecciona la subcuenta, copia su Location ID y crea una integración con contacts.readonly/contacts.write. Guárdala en Conexiones y prueba lectura y un contacto interno. |
 | Ollama | El login de GitHub devolvió un error del servidor. Completa el acceso de la cuenta, selecciona un modelo disponible y guarda su clave en Conexiones. Verifica y genera un borrador; revísalo antes de enviarlo tú. |
 | Hermes | La CLI quedó instalada en este entorno temporal. Configura modelo en una máquina persistente con `hermes setup` / `hermes model`. Prueba primero un reporte exportado. No hay cron ni agente continuo activo. |
-| Vercel | Entrada estática publicada. Conecta GitHub en los ajustes de autenticación para builds automáticos y resuelve el plan comercial. El reporte integrado de preview está preparado pero necesita autorización explícita de sus dos secretos. |
+| Vercel | Entrada estática publicada. La vista de prueba del reporte está READY en https://build-dreams-167ssccib-albertbtc-1680.vercel.app, desactivada y sin claves. Conecta GitHub para builds automáticos y resuelve el plan comercial. Activar el reporte requiere autorización explícita de sus dos secretos. |
 
 Ingresa las claves en el centro privado o en el asistente de configuración del proveedor. No las compartas en GitHub ni en el chat. No se enviaron campañas, se contrataron planes ni se ejecutaron pagos.
