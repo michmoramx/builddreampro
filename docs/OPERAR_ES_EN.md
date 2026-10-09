@@ -17,9 +17,9 @@ Acceso de Vercel: https://build-dreams-ops.vercel.app (abre el centro privado; n
 
 ## Consultar desde ChatGPT / Read from ChatGPT
 
-La instalación de la conexión privada fue confirmada. El servidor recibió solicitudes MCP exitosas; sus cuatro herramientas todavía no están expuestas en esta sesión y falta comprobar una consulta de datos. En **Plugins → Personal → Created by you**, abre Build Dreams y elige **Connect** si aparece. Consulta: “Lee el reporte real de Build Dreams; dame las tres prioridades, cobros pendientes y obras bloqueadas. No inventes avances”. Mientras se habilita la consulta, descarga el reporte desde el centro.
+La conexión privada está funcionando: se verificaron llamadas reales al reporte, las conexiones y la guía de operación. El reporte real del 9 de octubre de 2026 muestra cero obras, tareas y seguimientos. Registra primero tus clientes y operaciones en el centro. Después consulta aquí: “Lee el reporte real de Build Dreams; dame las tres prioridades, cobros pendientes y obras bloqueadas. No inventes avances”. También puedes descargar el reporte desde el centro. Estas herramientas son de lectura; los registros se crean y actualizan en la interfaz del centro.
 
-The user confirmed installation. Successful MCP requests reached the server, but this session does not expose its tools yet. Its tools only read daily priorities, project details, connection states and operating guidance. An actual successful data call confirms report access; publication and discovery alone do not.
+The private connection is working: actual daily report, connection status and operating guide calls succeeded. The real company report is currently empty. Enter clients and operations in the center, then ask ChatGPT to review priorities, receivables and blocked projects. These tools read records; use the center's interface to create or update them.
 
 ## Cada jornada / Every day
 

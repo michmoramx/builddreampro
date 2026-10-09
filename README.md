@@ -21,7 +21,7 @@ Money is stored in USD cents. Target margin is calculated on revenue: `price = c
 
 | Component | Implemented | Account setup still required |
 | --- | --- | --- |
-| ChatGPT | Private read-only MCP daily report, project details, connection status and operating guide | Installation confirmed by user; successful MCP requests observed, but tools are not exposed in this session for a data call |
+| ChatGPT | Private read-only MCP daily report, project details, connection status and operating guide | Connected and verified with actual daily report, connections and operating guide calls; real company report is currently empty |
 | GitHub | Source versioning | Repository is public; keep data and secrets outside Git |
 | Vercel | `portal/` access page deployed READY at https://build-dreams-ops.vercel.app; inactive report preview also READY | GitHub Login Connection for automatic builds; commercial plan; protected-fetch permission and report credentials remain pending |
 | Apollo | Auth test + People API Search; ChatGPT reads saved contacts (zero returned) | Connected Free account denied new prospect API search; direct center key and eligible plan pending |
