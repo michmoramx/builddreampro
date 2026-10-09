@@ -14,7 +14,7 @@ assert.equal(dateSchema.safeParse('2026-02-30').success,false);
 assert.equal(parseCSV('Name,Notes\n"Example, Inc","Line one\nLine two"')[0].name,'Example, Inc');
 assert.equal(csvCell('=IMPORTXML("x")').startsWith('"\''),true);
 const root=new URL('../dist/server/',import.meta.url).pathname;const files=await readdir(root,{recursive:true});const modules=[{type:'ESModule',path:root+'index.js'},...files.filter(p=>p!=='index.js'&&/\.m?js$/.test(p)).map(p=>({type:'ESModule',path:root+p}))];
-const mf=new Miniflare({modules,compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'ops-test'},bindings:{BD_CREDENTIAL_KEY:randomBytes(32).toString('base64'),BD_AGENT_TOKEN:'only-a-test-token'}});
+const mf=new Miniflare({modules,compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'ops-test'},bindings:{BD_CREDENTIAL_KEY:randomBytes(32).toString('base64'),BD_AGENT_TOKEN:'only-a-test-token',BD_SERVICE_TOKEN:'only-a-service-test-token',BD_APOLLO_CHAT_STATUS:'blocked_plan',BD_VERCEL_MODE:'entry'}});
 let checks=8;
 try{
  const db=await mf.getD1Database('DB');
@@ -51,6 +51,28 @@ try{
  const raw=await db.prepare('SELECT encrypted FROM credentials').first();assert.ok(raw&&!raw.encrypted.includes('not-a-real-test-secret'));checks++;
  assert.ok(!JSON.stringify(await state()).includes('not-a-real-test-secret'));checks++;
  assert.equal((await state(false)).records.length,0);checks++;
+ const initial=await state(false);assert.equal(initial.infrastructure.apolloChatStatus,'blocked_plan');assert.equal(initial.infrastructure.vercelMode,'entry');checks+=2;
+ async function mcp(method,params={},headers={}){const response=await mf.dispatchFetch('http://example.test/mcp',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});return{status:response.status,body:await response.json()};}
+ const handshake=await mcp('initialize',{protocolVersion:'2025-11-25'});assert.equal(handshake.body.result.protocolVersion,'2025-11-25');checks++;
+ const discovery=await mcp('tools/list');assert.equal(discovery.body.result.tools.length,4);assert.ok(discovery.body.result.tools.every(t=>t.annotations.readOnlyHint));assert.ok(!JSON.stringify(discovery.body).includes('not-a-real-test-secret'));checks+=3;
+ assert.equal((await mcp('tools/call',{name:'company_daily_report',arguments:{}})).status,401);checks++;
+ assert.equal((await mcp('tools/call',{name:'company_daily_report',arguments:{}},{Authorization:'Bearer only-a-test-token'})).status,401);checks++;
+ assert.equal((await mcp('tools/list',{}, {Origin:'https://untrusted.example'})).status,403);checks++;
+ const identity={'oai-authenticated-user-id':'test-owner'};
+ const emptyReport=await mcp('tools/call',{name:'company_daily_report',arguments:{}},identity);assert.equal(emptyReport.status,200);assert.equal(JSON.parse(emptyReport.body.result.content[0].text).counts.projects,0);checks+=2;
+ assert.equal((await mcp('tools/call',{name:'company_daily_report',arguments:{demo:true}},identity)).body.error.code,-32602);checks++;
+ assert.equal((await mcp('tools/call',{name:'company_project_details',arguments:{projectId:'demo-project'}},identity)).body.result.isError,true);checks++;
+ const states=await mcp('tools/call',{name:'company_connections',arguments:{}},identity);assert.equal(JSON.parse(states.body.result.content[0].text).infrastructure.apolloChatStatus,'blocked_plan');assert.ok(!JSON.stringify(states).includes('not-a-real-test-secret'));checks+=2;
+ assert.equal((await mf.dispatchFetch('http://example.test/api/service-report')).status,401);checks++;
+ assert.equal((await mf.dispatchFetch('http://example.test/api/service-report',{headers:{Authorization:'Bearer only-a-test-token'}})).status,401);checks++;
+ assert.equal((await mf.dispatchFetch('http://example.test/api/service-report',{method:'POST',headers:{Authorization:'Bearer only-a-service-test-token'}})).status,405);checks++;
+ const fixtures=[['mcp-test-project','project',{title:'Read test',owner:'Tester',status:'scheduled',priceCents:100000,costCents:70000,depositPct:20}],['mcp-test-payment','ledger',{projectId:'mcp-test-project',type:'payment',amountCents:20000,paid:true}]];
+ for(const [id,kind,record] of fixtures)await db.prepare('INSERT INTO records (id,kind,demo,data,version,created_at,updated_at) VALUES (?,?,0,?,1,?,?)').bind(id,kind,JSON.stringify(record),'2026-10-09','2026-10-09').run();
+ const realDetails=await mcp('tools/call',{name:'company_project_details',arguments:{projectId:'mcp-test-project'}},identity);assert.equal(JSON.parse(realDetails.body.result.content[0].text).balanceCents,80000);checks++;
+ const realReport=await mcp('tools/call',{name:'company_daily_report',arguments:{}},identity);assert.equal(JSON.parse(realReport.body.result.content[0].text).counts.projects,1);checks++;
+ const service=await mf.dispatchFetch('http://example.test/api/service-report',{headers:{Authorization:'Bearer only-a-service-test-token'}});assert.equal(service.status,200);assert.equal((await service.json()).projects[0].balanceCents,80000);checks+=2;
+ for(const [id]of fixtures)await db.prepare('DELETE FROM records WHERE id=? AND demo=0').bind(id).run();
+ assert.equal((await state(false)).records.length,0);checks++;
  const home=await mf.dispatchFetch('http://example.test/');assert.equal(home.status,200);checks++;
- console.log(JSON.stringify({passed:true,checks,realRecords:0,scope:'financial math, CSV, duplicate protection, approval, deposit gating, changes, references, optimistic concurrency, origin checks, agent auth, encrypted credentials, SSR'}));
+ console.log(JSON.stringify({passed:true,checks,realRecords:0,scope:'financial math, CSV, duplicate protection, approval, deposit gating, changes, references, optimistic concurrency, origin checks, agent auth, encrypted credentials, MCP identity and demo isolation, provider status, SSR'}));
 }finally{await mf.dispose();}

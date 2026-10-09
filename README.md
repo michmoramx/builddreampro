@@ -21,12 +21,13 @@ Money is stored in USD cents. Target margin is calculated on revenue: `price = c
 
 | Component | Implemented | Account setup still required |
 | --- | --- | --- |
+| ChatGPT | Private read-only MCP daily report, project details, connection status and operating guide | Install/connect the provisioned Site plugin and verify an actual call |
 | GitHub | Source versioning | Repository is public; keep data and secrets outside Git |
-| Vercel | `portal/` static access page | Deployment permission, GitHub Login Connection, commercial plan |
-| Apollo | Auth test + People API Search | API key and endpoint eligibility; ChatGPT connector access is separate |
-| GoHighLevel | Contacts search and upsert | Sub-account location ID and scoped private integration token |
-| Ollama Cloud | Model validation and bilingual follow-up draft | API key and an available cloud model |
-| Hermes | Read-only summary endpoint | Persistent machine, Hermes installation, model setup, authorized access |
+| Vercel | `portal/` access page deployed READY at https://build-dreams-ops.vercel.app | GitHub Login Connection for automatic builds; commercial plan; protected-fetch permission remains denied |
+| Apollo | Auth test + People API Search; ChatGPT reads saved contacts (zero returned) | Connected Free account denied new prospect API search; direct center key and eligible plan pending |
+| GoHighLevel | Contacts search and upsert | Company Google sign-in returned `User does not exist`; existing GHL account, location ID and scoped token needed |
+| Ollama Cloud | Model validation and bilingual follow-up draft | GitHub sign-in returned a server error; account access, key, cloud model and inference test pending |
+| Hermes | Software installed and CLI version checked in the current temporary environment | Model authentication and persistent host; no scheduled agent or gateway active |
 | Billing system | External references recorded in ledger | Existing invoicing/payment system remains the billing source |
 
 No integration sends emails or SMS automatically. Apollo search does not enrich emails or phone numbers. GHL contact synchronization is manual; CRM opportunities, calendar, messaging and workflows must be configured separately.
@@ -37,21 +38,33 @@ Requires Node >=22.13. Install using the existing pnpm lockfile. `npm run build`
 
 Use the platform environment manager for `BD_CREDENTIAL_KEY` (base64-encoded random 32-byte encryption key) and `BD_AGENT_TOKEN` (random dedicated token). Do not rotate the encryption master without a credential re-encryption plan. Optional metadata: `BD_GITHUB_URL`, `BD_VERCEL_URL`, `BD_SITE_URL`, `BD_APOLLO_CHAT_VERIFIED`. Never put credentials into metadata fields. Credentials for Apollo/GHL/Ollama are entered in the private application's Connections screen.
 
+Provider check metadata (`BD_APOLLO_CHAT_STATUS`, `BD_GHL_SIGNIN_STATUS`, `BD_OLLAMA_SIGNIN_STATUS`, `BD_HERMES_STATUS`, `BD_VERCEL_MODE`, `BD_PLATFORM_CHECKED_AT`) reports specific observed limits. It is not a substitute for a live API test with the configured credential.
+
 Build then run `node --experimental-strip-types tests/ops.test.mjs` for financial and Worker/D1 integration checks. Tests create isolated, transient storage and no external account traffic. `node node_modules/typescript/bin/tsc --noEmit` checks types.
+
+`node tests/vercel-report.test.mjs` checks the unactivated Vercel report gateway with mock upstream calls, including production refusal and credential redaction.
+
+## Private report tools
+
+`POST /mcp` supports JSON-RPC initialization, discovery and four read-only tools. Discovery contains no business records. Data calls require the trusted `oai-authenticated-user-id` that Sites supplies after OAuth and the owner-private access check; a service bearer alone does not create that identity. All record reads use company mode, never example data. Use the generated Site plugin's Install/Connect action in ChatGPT, then verify a read-only report call. Publication alone does not establish the connection.
 
 ## Vercel page
 
 Deploy **only `portal/`** as a static project with Framework Preset Other. It links to the private operations center. It does not proxy protected records or contain a backend access token. The root application expects Cloudflare D1 and is not a drop-in Vercel deployment. A future migration needs a database and authenticated API design plus explicit authorization for any new credential destination.
 
+`integrations/vercel-report-gateway/` contains a separate, reviewed read-only preview report module. It is not deployed or activated. `/api/service-report` in the private center is disabled until its dedicated `BD_SERVICE_TOKEN` is configured; private platform access is still required. The automatic approval review rejected transferring two access secrets to Vercel. Do not send them by another route; obtain specific authorization naming both secrets and the preview project destination first. The gateway README states the activation and Deployment Protection requirements.
+
 ## Operators
 
 Every opportunity needs an owner and next step date. Confirm measured scope, quotes, design/permits, approved price and written agreement before execution. Record only actual receipts/payments, each with a unique reference. Record scope changes only after written approval. Review tasks morning and afternoon; review cash, commitments, margins and follow-ups weekly. Back up records regularly. JSON export contains business records and recent audit entries, not credentials or a full provider configuration backup.
+
+See [Operating instructions / Instrucciones](docs/OPERAR_ES_EN.md).
 
 ## Primary references
 
 - [Apollo People API Search](https://docs.apollo.io/reference/people-api-search)
 - [Apollo API authentication](https://docs.apollo.io/reference/authentication)
-- [GoHighLevel private integrations](https://help.gohighlevel.com/support/solutions/articles/155000001305-private-integrations)
+- [GoHighLevel private integrations](https://help.gohighlevel.com/support/solutions/articles/155000003054-private-integrations-everything-you-need-to-know)
 - [GoHighLevel API](https://marketplace.gohighlevel.com/docs/)
 - [Ollama Cloud](https://docs.ollama.com/cloud)
 - [Ollama Hermes integration](https://docs.ollama.com/integrations/hermes)

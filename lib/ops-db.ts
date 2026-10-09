@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import type{Entity}from"./ops-core";
 export function runtime():any{return env;}
+export function infrastructureSummary(){const e=runtime();return{githubUrl:e.BD_GITHUB_URL||"",vercelUrl:e.BD_VERCEL_URL||"",vercelMode:e.BD_VERCEL_MODE||"",apolloChatVerified:e.BD_APOLLO_CHAT_VERIFIED==="true",apolloChatStatus:e.BD_APOLLO_CHAT_STATUS||"",ghlSignInStatus:e.BD_GHL_SIGNIN_STATUS||"",ollamaSignInStatus:e.BD_OLLAMA_SIGNIN_STATUS||"",hermesStatus:e.BD_HERMES_STATUS||"not_installed",platformCheckedAt:e.BD_PLATFORM_CHECKED_AT||""};}
 export function db():D1Database{const binding=runtime().DB;if(!binding)throw new Error("El almacenamiento no está disponible. Intenta nuevamente.");return binding;}
 export async function allRecords(demo:boolean):Promise<Entity[]>{const result=await db().prepare("SELECT * FROM records WHERE demo = ? ORDER BY created_at DESC").bind(demo?1:0).all<any>();return result.results.map(r=>({id:r.id,kind:r.kind,demo:!!r.demo,data:JSON.parse(r.data),version:r.version,createdAt:r.created_at,updatedAt:r.updated_at}));}
 export async function getRecord(id:string,demo:boolean){const r=await db().prepare("SELECT * FROM records WHERE id = ? AND demo = ?").bind(id,demo?1:0).first<any>();if(!r)throw new Error("No se encontró el registro.");return{id:r.id,kind:r.kind,demo:!!r.demo,data:JSON.parse(r.data),version:r.version,createdAt:r.created_at,updatedAt:r.updated_at}as Entity;}

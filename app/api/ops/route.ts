@@ -1,7 +1,7 @@
-import{z}from"zod";import{allRecords,commit,connectionSummary,db,fresh,getRecord,insertRecord,recentAudit,updateRecord,runtime}from"@/lib/ops-db";import{contactSchema,estimateSchema,estimateMath,ledgerSchema,taskSchema,changeSchema,activationErrors,contactKey,addDays,sameContact,contactKeys,dateSchema}from"@/lib/ops-core";
+import{z}from"zod";import{allRecords,commit,connectionSummary,db,fresh,getRecord,insertRecord,recentAudit,updateRecord,infrastructureSummary}from"@/lib/ops-db";import{contactSchema,estimateSchema,estimateMath,ledgerSchema,taskSchema,changeSchema,activationErrors,contactKey,addDays,sameContact,contactKeys,dateSchema}from"@/lib/ops-core";
 export const dynamic="force-dynamic";
 function json(data:any,status=200){return Response.json(data,{status,headers:{"Cache-Control":"no-store"}});}
-export async function GET(request:Request){try{const demo=new URL(request.url).searchParams.get("demo")==="1";return json({records:await allRecords(demo),audit:await recentAudit(demo),connections:await connectionSummary(),infrastructure:{githubUrl:runtime().BD_GITHUB_URL||"",vercelUrl:runtime().BD_VERCEL_URL||"",apolloChatVerified:runtime().BD_APOLLO_CHAT_VERIFIED==="true"}});}catch(e:any){return json({error:e.message},503);}}
+export async function GET(request:Request){try{const demo=new URL(request.url).searchParams.get("demo")==="1";return json({records:await allRecords(demo),audit:await recentAudit(demo),connections:await connectionSummary(),infrastructure:infrastructureSummary()});}catch(e:any){return json({error:e.message},503);}}
 export async function POST(request:Request){try{
  const origin=request.headers.get("origin");if(origin&&new URL(request.url).origin!==origin)throw new Error("Origen no permitido.");
  const b:any=await request.json();const requestId=z.string().uuid().parse(b.requestId),demo=b.demo===true,data=b.data||{},records=await allRecords(demo),statements:D1PreparedStatement[]=[];let ref="",notice="Guardado.";
